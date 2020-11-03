@@ -4,6 +4,7 @@ import com.in28minutes.rest.webservices.restfulwebservices.user.UserNotFoundExce
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -11,6 +12,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
@@ -29,7 +32,9 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        ExceptionResponse exceptionResponse = new ExceptionResponse(new Date(), ex.getMessage(), ex.getBindingResult().toString());
-        return new ResponseEntity<>(exceptionResponse, HttpStatus.BAD_REQUEST);
+        List<String> errors = ex.getBindingResult().getAllErrors().stream()
+                .map(ObjectError::getDefaultMessage).collect(Collectors.toList());
+        List<ExceptionResponse> exceptionResponseList = errors.stream().map(msg -> new ExceptionResponse(new Date(), ex.getMessage(), msg)).collect(Collectors.toList());
+        return new ResponseEntity<>(exceptionResponseList, HttpStatus.BAD_REQUEST);
     }
 }
